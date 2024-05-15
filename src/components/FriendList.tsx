@@ -9,7 +9,7 @@ import { Typography, TextField, Button } from "@material-ui/core";
 
 const useStyles = makeStyles(theme => ({
     selectAllButton: {
-        float: 'right',
+      float: 'right',
     },
     userList: {
         margin: '20px 0 40px 0',
@@ -29,25 +29,29 @@ const FriendList = () => {
         fetchFriends('')
     }, []);
 
+
     const handleCreateList = (event) => {
         event.preventDefault();
         setLoading(true);
+
+        // Create a new Close Friends list using the Instagram API
+        // Add the new list to the state using setUserList()
         setCloseFriends(selectedUsers)
             .catch(error => console.error(error)).finally(() => setLoading(false))
     };
 
     const toggleSelectAll = () => {
-        if (selectedUsers.length === userList.length) {
-            setSelectedUsers([]);
+        if (selectedUsers.length == userList.length) {
+            verboseSetSelectedUsers([]);
             window.dispatchEvent(new Event('noSelected'));
         } else {
             const allUsers = userList.map(user => user.pk);
-            setSelectedUsers(allUsers);
+            verboseSetSelectedUsers(allUsers);
             window.dispatchEvent(new Event('allSelected'));
         }
     };
 
-    const handleUserToggle = (user) => {
+    const handleUserToggle = (user: User) => {
         const currentIndex = selectedUsers.indexOf(user.pk);
         const newSelectedUsers = [...selectedUsers];
 
@@ -57,11 +61,16 @@ const FriendList = () => {
             newSelectedUsers.splice(currentIndex, 1);
         }
 
-        setSelectedUsers(newSelectedUsers);
+        verboseSetSelectedUsers(newSelectedUsers);
     };
 
+    const verboseSetSelectedUsers = (selectedUsers) => {
+        console.log(`Selected users: ${selectedUsers}`);
+        setSelectedUsers(selectedUsers);
+    }
+
     const fetchFriends = (searchTerm) => {
-        setLoading(true);
+        // Call the API to fetch the user's Close Friends
         getFriendsLists(searchTerm)
             .then(userList => {
                 setUserList(userList);
@@ -73,34 +82,43 @@ const FriendList = () => {
     const searchFriends = (event) => {
         const { value } = event.target;
         setSearchTerm(value);
-        debounce(() => fetchFriends(value), 1000)();
+        handleSearch(value);
     };
+
+    const handleSearch = debounce((searchTerm) => {
+        fetchFriends(searchTerm)
+    }, 1000);
 
     return (
         <div>
             {loading && <LoadingOverlay />}
             <Typography variant="h5" gutterBottom>Lista</Typography>
-            <Typography variant="subtitle1" gutterBottom>Total: {userList.length}</Typography>
-            <TextField
-                required
-                fullWidth
-                label="Search by username"
-                margin="normal"
-                variant="outlined"
-                onChange={searchFriends}
-            />
-            <div className={classes.userList}>
-                {userList.map((user) => (
-                    <UserItem key={user.pk} user={user} onUserSelect={() => handleUserToggle(user)} />
+            <div>
+                <TextField
+                    required
+                    fullWidth
+                    label="Search by username"
+                    margin="normal"
+                    variant="outlined"
+                    onChange={searchFriends}
+                />
+            </div>
+            <div className={classes.userList} >
+                {userList && userList.length > 0 && userList.map((user: User) => (
+                    <UserItem key={user.pk} user={user} onUserSelect={handleUserToggle} />
                 ))}
             </div>
-            <Button type="submit" variant="contained" color="primary" onClick={handleCreateList}>
-                Criar Lista
-            </Button>
-            <Button variant="outlined" color="primary" className={classes.selectAllButton} onClick={toggleSelectAll}>
-                Selecionar Todos
-            </Button>
+            <div>
+                <Button type="submit" variant="contained" color="primary" onClick={handleCreateList}>
+                    Criar Lista
+                </Button>
+
+                <Button variant="outlined" color="primary" onClick={toggleSelectAll} className={classes.selectAllButton}>
+                    Selecionar Todos
+                </Button>
+            </div>
         </div>
+
     );
 };
 
